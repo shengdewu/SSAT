@@ -8,6 +8,7 @@ from torch.nn import init
 import torch.nn.functional as F
 from torch.optim import lr_scheduler
 
+
 ####################################################################
 # ------------------------- Discriminators --------------------------
 ####################################################################
@@ -203,20 +204,22 @@ class FeatureFusion(nn.Module):
                             feature_map5
                             ], dim=1)
         return output
+
+
 ####################################################################
 # ----------------------- Symmetry Transformer----------------------
 ####################################################################
 class Transformer(nn.Module):
     def __init__(self):
         super(Transformer, self).__init__()
-        self.fusion=FeatureFusion()
-        self.atte=SymmetryAttention()
+        self.fusion = FeatureFusion()
+        self.atte = SymmetryAttention()
 
-    def forward(self, x_c, y_c,x_s,y_s,x_m,y_m):
-        x_f = self.fusion(x_c,x_s)
+    def forward(self, x_c, y_c, x_s, y_s, x_m, y_m):
+        x_f = self.fusion(x_c, x_s)
         y_f = self.fusion(y_c, y_s)
-        attention_x,attention_y,x_m_warp,y_m_warp=self.atte(x_f,y_f,x_m,y_m)
-        return attention_x,attention_y,x_m_warp,y_m_warp
+        attention_x, attention_y, x_m_warp, y_m_warp = self.atte(x_f, y_f, x_m, y_m)
+        return attention_x, attention_y, x_m_warp, y_m_warp
 
 
 ####################################################################
@@ -236,7 +239,7 @@ class SymmetryAttention(nn.Module):
         # input: [N, ?, ?, ...]
         # dim: scalar > 0
         # index: [N, idx]
-        views = [input.size(0)] + [1 if i!=dim else -1 for i in range(1, len(input.size()))]
+        views = [input.size(0)] + [1 if i != dim else -1 for i in range(1, len(input.size()))]
         expanse = list(input.size())
         expanse[0] = -1
         expanse[dim] = -1
@@ -280,7 +283,6 @@ class SymmetryAttention(nn.Module):
         a_warp = a_warp.view(n, raw_c, h, w)
         return corr_ab_T, corr_ba_T, a_warp, b_warp
 
-
     def forward(self, fa, fb, a_raw, b_raw):
         fa = self.fa_conv(fa)
         fb = self.fb_conv(fb)
@@ -303,14 +305,14 @@ class Decoder(nn.Module):
         self.tanh = nn.Tanh()
 
     def forward(self, x, y):
-        content=x[-1]
-        makeup=y
-        out = self.SPADE1(content,makeup)
+        content = x[-1]
+        makeup = y
+        out = self.SPADE1(content, makeup)
         out = self.up(out)
         out = self.SPADE2(out, makeup)
         out = self.up(out)
         out = self.SPADE3(out, makeup)
-        out=self.img_conv(out)
+        out = self.img_conv(out)
         out = self.tanh(out)
         return out
 
